@@ -34,7 +34,7 @@ class CustomStandardScaler:
         return (scaled_data * self.std) + self.mean
 
 
-@st.cache_resource
+
 def load_age_scaler():
     # Load the pre-trained scaler
     try:
@@ -48,7 +48,7 @@ def load_age_scaler():
     return None  # Added to handle the case when exception happens
 
 
-@st.cache_resource
+
 def load_tflite_model():
     # Load TFLite model and allocate tensors.
     try:
@@ -80,7 +80,7 @@ def preprocess_image_pil(image_pil):
     return image
 
 
-@st.cache_data
+
 def preprocess_tabular_data_inference(
     age, view_CC, view_MLO, laterality_L, laterality_R, age_scaler
 ):
@@ -237,7 +237,7 @@ elif image_choice == "Select Example Image":
     example_image_dir = "static/example_images"
     metadata_path = os.path.join(example_image_dir, "metadeta.json")
 
-    @st.cache_data
+    
     def load_example_metadata(metadata_path):
         try:
             with open(metadata_path, "r") as f:
