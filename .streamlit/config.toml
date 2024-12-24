@@ -1,0 +1,6 @@
+[server]
+enableStaticServing = true
+[server]
+port = 80
+[client]
+showErrorDetails = true
