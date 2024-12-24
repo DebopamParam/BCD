@@ -69,7 +69,6 @@ age_scaler = load_age_scaler()
 interpreter = load_tflite_model()
 
 
-@st.cache_data
 def preprocess_image_pil(image_pil):
     """Preprocesses a PIL Image for the TensorFlow Lite model."""
     # Resize and convert to RGB
