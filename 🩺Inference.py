@@ -108,7 +108,6 @@ def preprocess_tabular_data_inference(
     return tabular_features
 
 
-@st.cache_data
 def run_tflite_inference(
     image_pil,
     age,
