@@ -215,7 +215,7 @@ st.markdown(
 
 image_choice = st.radio(
     "Choose an Image Source:",
-    ["Upload My Own", "Select Example Image"],
+    ["Upload Scan(Mammogram) ", " Select Sample Image"],
     index=1,
     horizontal=True,
 )
@@ -223,7 +223,7 @@ image_choice = st.radio(
 selected_image = None
 selected_example_data = None  # To store metadata of the selected example
 
-if image_choice == "Upload My Own":
+if image_choice == "Upload Scan(Mammogram) ":
     uploaded_file = st.file_uploader(
         "Upload a mammogram image (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"]
     )
@@ -232,7 +232,7 @@ if image_choice == "Upload My Own":
         st.image(selected_image, caption="Uploaded Mammogram", use_container_width=True)
         # Reset selected example data when uploading a new image
         selected_example_data = None
-elif image_choice == "Select Example Image":
+elif image_choice == " Select Sample Image":
     # Define the directory where your example images are stored
     example_image_dir = "static/example_images"
     metadata_path = os.path.join(example_image_dir, "metadeta.json")
