@@ -1,6 +1,5 @@
 [server]
 enableStaticServing = true
-port = 80
 maxUploadSize = 5
 
 [client]
