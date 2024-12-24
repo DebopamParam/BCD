@@ -4,3 +4,5 @@ enableStaticServing = true
 port = 80
 [client]
 showErrorDetails = true
+[server]
+maxUploadSize = 5
