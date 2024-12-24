@@ -1,0 +1,23 @@
+{
+    "normal": {
+        "name": "normal",
+        "path": "static/example_images/normal.png",
+        "age": 35,
+        "scan_view": "MLO",
+        "laterality": "L"
+    },
+    "benign": {
+        "name": "benign",
+        "path": "static/example_images/benign.png",
+        "age": 65,
+        "scan_view": "MLO",
+        "laterality": "R"
+    },
+    "malignant": {
+        "name": "malignant",
+        "path": "static/example_images/malignant.png",
+        "age": 85,
+        "scan_view": "CC",
+        "laterality": "R"
+    }
+}
