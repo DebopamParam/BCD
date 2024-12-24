@@ -34,27 +34,42 @@ class CustomStandardScaler:
         return (scaled_data * self.std) + self.mean
 
 
-# Load the pre-trained scaler
-try:
-    age_scaler = joblib.load("static/artifacts/custom_scaler.pkl")
-except FileNotFoundError:
-    st.error(
-        "Error: custom_scaler.pkl not found. Please ensure it is in the static/artifacts/ directory."
-    )
-    st.stop()
-# Load TFLite model and allocate tensors.
-try:
-    interpreter = tf.lite.Interpreter(
-        model_path="static/artifacts/model_float16_quant.tflite"
-    )
-    interpreter.allocate_tensors()
-except FileNotFoundError:
-    st.error(
-        "Error: model_float16_quant.tflite not found. Please ensure it is in the static/artifacts/ directory."
-    )
-    st.stop()
+@st.cache_resource
+def load_age_scaler():
+    # Load the pre-trained scaler
+    try:
+        age_scaler = joblib.load("static/artifacts/custom_scaler.pkl")
+        return age_scaler
+    except FileNotFoundError:
+        st.error(
+            "Error: custom_scaler.pkl not found. Please ensure it is in the static/artifacts/ directory."
+        )
+        st.stop()
+    return None  # Added to handle the case when exception happens
 
 
+@st.cache_resource
+def load_tflite_model():
+    # Load TFLite model and allocate tensors.
+    try:
+        interpreter = tf.lite.Interpreter(
+            model_path="static/artifacts/model_float16_quant.tflite"
+        )
+        interpreter.allocate_tensors()
+        return interpreter
+    except FileNotFoundError:
+        st.error(
+            "Error: model_float16_quant.tflite not found. Please ensure it is in the static/artifacts/ directory."
+        )
+        st.stop()
+    return None
+
+
+age_scaler = load_age_scaler()
+interpreter = load_tflite_model()
+
+
+@st.cache_data
 def preprocess_image_pil(image_pil):
     """Preprocesses a PIL Image for the TensorFlow Lite model."""
     # Resize and convert to RGB
@@ -66,6 +81,7 @@ def preprocess_image_pil(image_pil):
     return image
 
 
+@st.cache_data
 def preprocess_tabular_data_inference(
     age, view_CC, view_MLO, laterality_L, laterality_R, age_scaler
 ):
@@ -92,8 +108,16 @@ def preprocess_tabular_data_inference(
     return tabular_features
 
 
+@st.cache_data
 def run_tflite_inference(
-    image_pil, age, view_CC, view_MLO, laterality_L, laterality_R, age_scaler
+    image_pil,
+    age,
+    view_CC,
+    view_MLO,
+    laterality_L,
+    laterality_R,
+    age_scaler,
+    interpreter,
 ):
     """Runs inference with the TensorFlow Lite model."""
 
@@ -215,36 +239,45 @@ elif image_choice == "Select Example Image":
     example_image_dir = "static/example_images"
     metadata_path = os.path.join(example_image_dir, "metadeta.json")
 
-    try:
-        with open(metadata_path, "r") as f:
-            metadata = json.load(f)
-    except FileNotFoundError:
-        st.error(f"Error: {metadata_path} not found.")
-        st.stop()
-    except json.JSONDecodeError:
-        st.error(f"Error: Could not decode JSON from {metadata_path}.")
-        st.stop()
+    @st.cache_data
+    def load_example_metadata(metadata_path):
+        try:
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+                return metadata
+        except FileNotFoundError:
+            st.error(f"Error: {metadata_path} not found.")
+            st.stop()
+        except json.JSONDecodeError:
+            st.error(f"Error: Could not decode JSON from {metadata_path}.")
+            st.stop()
+        return None
 
+    metadata = load_example_metadata(metadata_path)
     # Get a list of image names from the metadata
-    image_names = list(metadata.keys())
-    if not image_names:
-        st.warning(f"No image metadata found in '{metadata_path}'.")
-    else:
-        selected_example_name = st.selectbox("Select an Example Image:", image_names)
-        if selected_example_name:
-            selected_example_data = metadata[selected_example_name]
-            try:
-                selected_image_path = os.path.join(
-                    example_image_dir, selected_example_data["path"].split("/")[-1]
-                )
-                selected_image = Image.open(selected_image_path)
-                st.image(
-                    selected_image,
-                    caption=f"Example Image: {selected_example_name}",
-                    use_container_width=True,
-                )
-            except Exception as e:
-                st.error(f"Error loading example image: {e}")
+    if metadata is not None:
+        image_names = list(metadata.keys())
+        if not image_names:
+            st.warning(f"No image metadata found in '{metadata_path}'.")
+        else:
+            selected_example_name = st.selectbox(
+                "Select an Example Image:", image_names
+            )
+            if selected_example_name:
+                selected_example_data = metadata[selected_example_name]
+                try:
+                    selected_image_path = os.path.join(
+                        example_image_dir, selected_example_data["path"].split("/")[-1]
+                    )
+                    selected_image = Image.open(selected_image_path)
+                    st.image(
+                        selected_image,
+                        caption=f"Example Image: {selected_example_name}",
+                        use_container_width=True,
+                    )
+                except Exception as e:
+                    st.error(f"Error loading example image: {e}")
+
 
 col1, col2 = st.columns(2)
 with col1:
@@ -295,6 +328,8 @@ if st.button("Predict"):
         st.warning("Please upload or select an image to proceed.")
     elif age_scaler is None:
         st.error("Error: Age scaler not loaded.")
+    elif interpreter is None:
+        st.error("Error: TFLite Interpreter not loaded.")
     else:
         results = run_tflite_inference(
             selected_image,
@@ -304,6 +339,7 @@ if st.button("Predict"):
             laterality_L,
             laterality_R,
             age_scaler,
+            interpreter,
         )
 
         st.write("## Prediction Results:")
